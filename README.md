@@ -427,6 +427,59 @@ Now any module can handle `diosh_phase_idleirq_t0` and end up directly after the
 
 Additionally, just like with IRQ phases mentioned above, you can attach event queues to `idleirq_t0` to only handle some events whenever `t0` triggers.
 
+### Watchdog Timer
+
+The point of an event-based RTOS is that the idle loop is always being executed, so there's an obvious place for feeding the WDT.
+The best place for a WDT module is the idle post-handler.
+This ensures that starvation, when there are multiple idle queues, cause a WDT reset.
+
+```asm
+    ; Module wdt.inc
+    ifdef   diosh_init
+    movlw   0x0A << WDTPS0      ; 1:32768, or ~1 s
+    banksel WDTCON
+    movwf   WDTCON
+    endif   ; diosh_init
+
+    ifdef   diosph_idle
+    clrwdt
+    endif   ; diosph_idle
+```
+
+If starvation is acceptable, but other hangups are not, use the main idle handler: `diosh_idle`.
+Of course, if there are other phases that may take a long time, you can add watchdog handlers for them too.
+
+### Reset Cause Handler
+
+If you want to catch WDT resets, you could create an event for it:
+
+```asm
+    ; DiOS Config
+    dios
+    module      "wdt.inc"
+
+    evqueue     IDLE_QUEUE, idle
+    event       WDT_RESET_EVENT
+
+    ; Module wdt.inc
+    ifdef       diosh_init
+    ; ... WDTCon initialization if required ...
+
+    pagesel     wdt_reset_end
+    btfss       STATUS, NOT_TO
+    goto        wdt_reset_end
+    diospost    WDT_RESET_EVENT
+wdt_reset_end:
+    endif       ; diosh_init
+
+    ifdef       diosph_idle
+    clrwdt
+    endif       ; diosph_idle
+```
+
+This is using an event rather than a phase, to avoid running "main" code inside the "init" phase, when not everything might be initialized.
+Your use-case might be different, but there is usually nothing urgent about handling the reset condition, once the `STATUS` register has been saved.
+
 ## Internals
 
 ### Event Queues
@@ -447,4 +500,13 @@ There should be no visible difference to the user.
 - It would be nice to use macros instead of `ifdef`, so all handler code uses local names.
   Then we'd include all modules once, and use well-known names instead.
   Before building the code generator, the `ifdef` approach required less maintenance, so that's where we are.
+- Timers would be useful in general, to share the few hardware timers more easily.
+  This is similar to event counter expressions, but would be able to disable the hardware when it's not needed.
 - gpsim could be used for automatic testing.
+  Remember to disable WDT!
+- Event expressions: building meta-events to say "post X if A and then B or (C and D in any order) are posted".
+  Not entirely sure how useful that would be on its own.
+  - "post X if A has been posted 10 times" would be useful for timers
+  - "post X if A has been posted 10 times and not B" would be useful to debouncers
+- Continuations: implementing cooperative multitasking by allowing "waiting" on one or more events, like POSIX `select(2)`.
+  For PIC-sized code, is there any benefit compared to modular event handlers?
