@@ -143,7 +143,7 @@ Phases are similar to tasks in other RTOSes.
 There are a few built-in phases:
 
 | Phase | Description |
-|-------+-------------|
+|-------|-------------|
 | init  | Issued on reset.
 | idle  | Issued continuously in the idle loop.
 | irq   | Issued inside the ISR.
@@ -166,7 +166,7 @@ Using post-handlers is likely not very useful for `init` and `idle`.
 Similar to the phases, there are hooks available for definition various sections:
 
 | Hook      | Description |
-|-----------+-------------|
+|-----------|-------------|
 | udata     | Uninitialized data
 | udata_shr | Uninitialized data in the non-banked space
 | idata     | Initialized data
@@ -218,7 +218,7 @@ b_trisa_init    ~(1 << 3)
 These operators are defined:
 
 | Operator | Empty Value |
-|----------+-------------|
+|----------|-------------|
 | `and`    | 0xF...F
 | `or`     | 0
 | `xor`    | 0
