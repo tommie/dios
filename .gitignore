@@ -1,1 +1,7 @@
 __pycache__/
+
+/example/**/*.cod
+/example/**/*.hex
+/example/**/*.lst
+/example/**/*.map
+/example/**/*.o
