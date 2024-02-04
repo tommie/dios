@@ -142,12 +142,12 @@ The configuration file lists modules, and coordination primitives:
 Phases are similar to tasks in other RTOSes.
 There are a few built-in phases:
 
- Phase | Description
--------+-------------
- init  | Issued on reset.
- idle  | Issued continuously in the idle loop.
- irq   | Issued inside the ISR.
- sleep | If sleep is enabled, issued before sleep.
+| Phase | Description |
+|-------+-------------|
+| init  | Issued on reset.
+| idle  | Issued continuously in the idle loop.
+| irq   | Issued inside the ISR.
+| sleep | If sleep is enabled, issued before sleep.
 
 More phases can be created using the `irq` and `phase` directives.
 The IRQ phases are automatically invoked inside the ISR, and the corresponding flag is cleared before execution.
@@ -165,13 +165,13 @@ Using post-handlers is likely not very useful for `init` and `idle`.
 
 Similar to the phases, there are hooks available for definition various sections:
 
- Hook      | Description
------------+-------------
- udata     | Uninitialized data
- udata_shr | Uninitialized data in the non-banked space
- idata     | Initialized data
- eedata    | Data EEPROM definitions
- code      | For utility functions
+| Hook      | Description |
+|-----------+-------------|
+| udata     | Uninitialized data
+| udata_shr | Uninitialized data in the non-banked space
+| idata     | Initialized data
+| eedata    | Data EEPROM definitions
+| code      | For utility functions
 
 There are no post-handlers, so `ifdef diosh_udata` is the only way to add uninitialized data.
 
@@ -217,13 +217,13 @@ b_trisa_init    ~(1 << 3)
 
 These operators are defined:
 
- Operator | Empty Value
-----------+-------------
-`and`     | 0xF...F
-`or`      | 0
-`xor`     | 0
-`add`     | 0
-`sub`     | 0
+| Operator | Empty Value |
+|----------+-------------|
+| `and`    | 0xF...F
+| `or`     | 0
+| `xor`    | 0
+| `add`    | 0
+| `sub`    | 0
 
 The empty value is used if no module defines a value.
 
@@ -433,11 +433,11 @@ Additionally, just like with IRQ phases mentioned above, you can attach event qu
 
 There are three sizes of queues:
 
-- *Tiny* queues have at most two events.
+- **Tiny** queues have at most two events.
   They only ever check each bit separately; the naive case.
-- *Medium* queues have at most 16 events.
+- **Medium** queues have at most 16 events.
   Before checking individual bits, they check if the entire byte is non-zero.
-- *Large* queues are the rest.
+- **Large** queues are the rest.
   They set a queue-wide flag on posting, and only check the individual bytes and bits if that global flag is set.
 
 There should be no visible difference to the user.
