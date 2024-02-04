@@ -377,6 +377,49 @@ mend:
     endif       ; diosh_idle
 ```
 
+### Abstract Modules
+
+Some modules are building blocks that shouldn't do anything unless instantiated.
+Or, perhaps there can be any number of instances.
+E.g. an AES or PID control software implementation.
+
+In this case, you likely want to make use of MPASM's `#v(expr)` expansion to create unique names for variables:
+
+```asm
+                    ; Module pid.inc
+                    ifdef   diosh_udata
+pid_udata           macro   index, Ki
+pid_ki#v(index)     equ     Ki
+pid_err#v(index)    res     1
+pid_acc#v(index)    res     1
+                    endm
+                    endif   ; diosh_udata
+
+                    ifdef   diosh_code
+pid_update          macro   index, errf
+                    banksel errf
+                    movf    errf, W
+                    movwf   pid_err#v(index)
+                    movlw   pid_ki#v(index)
+                    ; ...
+                    endm
+                    endif   ; diosh_code
+
+
+                ; Module tempcontrol.inc
+                ifdef       diosh_udata
+tempcontrol_pid equ         0   ; Must be unique; could use a CBLOCK.
+                pid_udata   tempcontrol_pid, 42
+                endif       ; diosh_udata
+
+                ifdef       diosh_idle
+                pid_update  tempcontrol_pid, PORTA
+                endif       ; diosh_idle
+```
+
+Note that the index integers don't need to be consequtive or start at zero.
+They're just used to generate unique variable names.
+
 ### IRQ Context Saving
 
 DiOS only saves enough context for its own purposes: `W`, `STATUS`, and `PCLATH`.
