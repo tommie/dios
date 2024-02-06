@@ -559,3 +559,9 @@ There should be no visible difference to the user.
   - The benefit would be the ability to pack state tightly, across module boundaries.
 - Continuations: implementing cooperative multitasking by allowing "waiting" on one or more events, like POSIX `select(2)`.
   For PIC-sized code, is there any benefit compared to modular event handlers?
+- Modules should list their dependencies and diosgen does toposort.
+- Modules should list the config they need, and diosgen merges, possibly checking conflicts.
+  - Allow specifying consts the module contributes to, and make diosgen fail if there is no const defined.
+- Abstract modules should say what types of resources can be instantiated, and provide templates. diosgen runs the templates for each instance defined in other modules.
+- Macros and defs should be moved to a separate phase.
+  - Same with config word.
