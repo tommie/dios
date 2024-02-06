@@ -419,8 +419,10 @@ def generate_sleep(progdef: ProgramDef, file: TextIO, himplfile: TextIO):
 \tbtfsc\t{wakesrcdef.enfile}, {wakesrcdef.enbit}
 \tbsf\tSTATUS, C""", file=file)
 
-    # Inhibit sleep if interrupts are disabled.
-    print("""\tbanksel\tINTCON
+    # Inhibit sleep if interrupts are disabled. With "wake always," we
+    # assume it's enabled. This still allows the CPU to react to reset.
+    if progdef.wakesrcs:
+        print("""\tbanksel\tINTCON
 \tbtfss\tINTCON, GIE
 \tbcf\tSTATUS, C""", file=file)
 
