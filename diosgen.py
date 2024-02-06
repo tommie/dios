@@ -291,8 +291,8 @@ def generate_queue_macros(queuedef: QueueDef, file: TextIO):
     if not queuedef.phase:
         print(file=file)
         print(f"""process_{queuedef.name.lower()}\tmacro
-\tpagesel\thandle_{queuedef.name.lower()}
-\tcall\thandle_{queuedef.name.lower()}
+\tpagesel\tdispatch_{queuedef.name.lower()}
+\tcall\tdispatch_{queuedef.name.lower()}
 \tendm""", file=file)
 
 def generate_queue_init(queuedef: QueueDef, file: TextIO):
@@ -607,7 +607,7 @@ _start:""", file=file)
         if queuedef.phase:
             continue
         print(file=file)
-        startlabel = "handle_" + queuedef.name.lower()
+        startlabel = "dispatch_" + queuedef.name.lower()
         print(startlabel + ":", file=file)
         queuehimplfile = io.StringIO()
         generate_queue_handler(queuedef, progdef, startlabel, file, queuehimplfile)
