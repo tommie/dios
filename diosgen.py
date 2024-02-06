@@ -285,7 +285,7 @@ def generate_queue_macros(queuedef: QueueDef, file: TextIO):
             for i in range((len(queuedef.events) + 7) // 8):
                 print(f"""\tbanksel\tdios_q_{queuedef.name} + {i}
 \tiorwf\tdios_q_{queuedef.name} + {i}, W""", file=file)
-        print(f"\tbtfsc\tSTATUS, Z", file=file)
+        print(f"\tbtfss\tSTATUS, Z", file=file)
     print("\tendm", file=file)
 
     if not queuedef.phase:
