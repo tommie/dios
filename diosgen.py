@@ -13,6 +13,7 @@
 import argparse
 import contextlib
 from dataclasses import dataclass, field
+import io
 import os.path
 import re
 from typing import Iterator, TextIO, Union
@@ -301,7 +302,7 @@ def generate_queue_init(queuedef: QueueDef, file: TextIO):
         print(f"""\tbanksel\tdios_q_{queuedef.name} + {i}
 \tclrf\tdios_q_{queuedef.name} + {i}""", file=file)
 
-def generate_queue_handler(queuedef: QueueDef, progdef: ProgramDef, file: TextIO):
+def generate_queue_handler(queuedef: QueueDef, progdef: ProgramDef, startlabel: str, file: TextIO, implfile: TextIO):
     has_prios = progdef.phase_has_priorities(queuedef.phase)
 
     print(f"\t; Queue handler for {queuedef.name}", file=file)
@@ -334,17 +335,24 @@ def generate_queue_handler(queuedef: QueueDef, progdef: ProgramDef, file: TextIO
 
         endbit = min(len(queuedef.events), i * 8 + 8)
         for j in range(i * 8, endbit):
+            bimpllabel = f"dios_b{j}impl_{queuedef.name}"
             bendlabel = f"dios_b{j}end_{queuedef.name}"
-            print(f"""\tpagesel\t{bendlabel}
-\tbtfss\tdios_q_{queuedef.name} + {i}, {j - i * 8}
-\tgoto\t{bendlabel}
-\tbcf\tdios_q_{queuedef.name} + {i}, {j - i * 8}""", file=file)
-            generate_modules(f"event_{queuedef.name}_{queuedef.events[j].name}", progdef, file)
+            print(f"""\tpagesel\t{bimpllabel}
+\tbtfsc\tdios_q_{queuedef.name} + {i}, {j - i * 8}
+\tgoto\t{bimpllabel}""", file=file)
+
+            # The out-of-line implementation.
+            print(f"""{bimpllabel}:
+\tbcf\tdios_q_{queuedef.name} + {i}, {j - i * 8}""", file=implfile)
+            generate_modules(f"event_{queuedef.name}_{queuedef.events[j].name}", progdef, implfile)
             if queuedef.is_tiny and has_prios:
                 print(f"""\tbanksel\tdios_qstate_{queuedef.name} + {i}
-\tbsf\tdios_qstate_{queuedef.name}, 1""", file=file)
+\tbsf\tdios_qstate_{queuedef.name}, 1""", file=implfile)
             if j != endbit - 1:
-                print(f"""\tbanksel\tdios_q_{queuedef.name} + {i}""", file=file)
+                print(f"""\tbanksel\tdios_q_{queuedef.name} + {i}""", file=implfile)
+            print(f"""\tpagesel\t{bendlabel}
+\tgoto\t{bendlabel}""", file=implfile)
+
             print(f"""{bendlabel}:""", file=file)
 
         if not queuedef.is_tiny:
@@ -354,13 +362,13 @@ def generate_queue_handler(queuedef: QueueDef, progdef: ProgramDef, file: TextIO
 
     if has_prios:
         if not queuedef.is_large:
-            print(f"""\tpagesel\tphase_idle
+            print(f"""\tpagesel\t{startlabel}
 \tbanksel\tdios_qstate_{queuedef.name}
 \tbtfsc\tdios_qstate_{queuedef.name}, 1
-\tgoto\tphase_idle""", file=file)
+\tgoto\t{startlabel}""", file=file)
         else:
-            print(f"""\tpagesel\tphase_idle
-\tgoto\tphase_idle""", file=file)
+            print(f"""\tpagesel\t{startlabel}
+\tgoto\t{startlabel}""", file=file)
 
     if queuedef.is_large:
         print(f"{qendlabel}:", file=file)
@@ -374,8 +382,9 @@ def generate_constdef(constdef: ConstDef, progdef: ProgramDef, file: TextIO):
 \tendif""", file=file)
 
 @contextlib.contextmanager
-def phase_code(phasedef: PhaseDef, progdef: ProgramDef, file: TextIO):
-    print(f"phase_{phasedef.name}:", file=file)
+def phase_code(phasedef: PhaseDef, progdef: ProgramDef, file: TextIO, himplfile: TextIO):
+    startlabel = "phase_" + phasedef.name
+    print(startlabel + ":", file=file)
 
     generate_modules(phasedef.name, progdef, file, post=False)
 
@@ -385,15 +394,15 @@ def phase_code(phasedef: PhaseDef, progdef: ProgramDef, file: TextIO):
         if queuedef.phase != phasedef.name:
             continue
         print(file=file)
-        generate_queue_handler(queuedef, progdef, file)
+        generate_queue_handler(queuedef, progdef, startlabel, file, himplfile)
 
     generate_modules(phasedef.name, progdef, file, main=False)
 
-def generate_phase(phasedef: PhaseDef, progdef: ProgramDef, file: TextIO):
-    with phase_code(phasedef, progdef, file):
+def generate_phase(phasedef: PhaseDef, progdef: ProgramDef, file: TextIO, himplfile: TextIO):
+    with phase_code(phasedef, progdef, file, himplfile):
         pass
 
-def generate_sleep(progdef: ProgramDef, file: TextIO):
+def generate_sleep(progdef: ProgramDef, file: TextIO, himplfile: TextIO):
     # Set C to whether there are any wake-up soruces enabled.
     #
     # NOTE: This assumes group bits like PEIE are always enabled.
@@ -426,7 +435,7 @@ def generate_sleep(progdef: ProgramDef, file: TextIO):
 \tbtfss\tSTATUS, C
 \tgoto\tphase_sleep_done""", file=file)
 
-    with phase_code(PhaseDef("sleep"), progdef, file):
+    with phase_code(PhaseDef("sleep"), progdef, file, himplfile):
         print("\tsleep", file=file)
 
     print("phase_sleep_done:", file=file)
@@ -510,14 +519,30 @@ _irq:
 \tmovwf\tdios_irqsave_pclath
 """, file=file)
 
-    with phase_code(PhaseDef(name="irq"), progdef, file):
+    irqhimplfile = io.StringIO()
+    with phase_code(PhaseDef(name="irq"), progdef, file, irqhimplfile):
         for irqdef in progdef.irqs:
-            print(f"""\tpagesel\tdios_irqend_{irqdef.phase}
+            impllabel = "dios_irqimpl_" + irqdef.phase
+            print(f"""\tpagesel\t{impllabel}
 \tbanksel\t{irqdef.flagfile}
-\tbtfss\t{irqdef.flagfile}, {irqdef.flagbit}
-\tgoto\tdios_irqend_{irqdef.phase}
-\tbcf\t{irqdef.flagfile}, {irqdef.flagbit}""", file=file)
-            generate_phase(PhaseDef(name=irqdef.phase), progdef, file)
+\tbtfsc\t{irqdef.flagfile}, {irqdef.flagbit}
+\tgoto\t{impllabel}""", file=file)
+
+            # The out-of-line interrupt handler, which in turn may
+            # have twice-out-of-line event handlers.
+            print(f"""{impllabel}:
+\tbcf\t{irqdef.flagfile}, {irqdef.flagbit}""", file=irqhimplfile)
+            irqqueuehimplfile = io.StringIO()
+            generate_phase(PhaseDef(name=irqdef.phase), progdef, irqhimplfile, irqqueuehimplfile)
+            print(f"""\tpagesel\tdios_irqend_{irqdef.phase}
+\tgoto\tdios_irqend_{irqdef.phase}""", file=irqqueuehimplfile)
+
+            # We want the event handlers as close as possible to the
+            # interrupt handler.
+            if irqqueuehimplfile.getvalue():
+                print(file=file)
+                irqhimplfile.write(irqqueuehimplfile.getvalue())
+
             print(f"""dios_irqend_{irqdef.phase}:""", file=file)
 
     print("""
@@ -529,6 +554,10 @@ _irq:
 \tswapf\tdios_irqsave_w, W
 \tretfie""", file=file)
 
+    if irqhimplfile.getvalue():
+        print(file=file)
+        file.write(irqhimplfile.getvalue())
+
     # Entry.
     print("""
 _start:""", file=file)
@@ -538,19 +567,24 @@ _start:""", file=file)
 
     # Initialization.
     print(file=file)
-    generate_phase(PhaseDef(name="init"), progdef, file)
+    mainhimplfile = io.StringIO()
+    generate_phase(PhaseDef(name="init"), progdef, file, mainhimplfile)
 
     # The main loop, with idle phase.
     print(file=file)
-    generate_phase(PhaseDef(name="idle"), progdef, file)
+    generate_phase(PhaseDef(name="idle"), progdef, file, mainhimplfile)
 
     if progdef.sleepable:
         print(file=file)
-        generate_sleep(progdef, file)
+        generate_sleep(progdef, file, mainhimplfile)
 
     print("""
 \tpagesel\tphase_idle
 \tgoto\tphase_idle""", file=file)
+
+    if mainhimplfile.getvalue():
+        print(file=file)
+        file.write(mainhimplfile.getvalue())
 
     if progdef.modules:
         print(file=file)
@@ -559,17 +593,28 @@ _start:""", file=file)
     # Custom phases
     for phasedef in progdef.phases:
         print(file=file)
-        generate_phase(phasedef, progdef, file)
+        phasehimplfile = io.StringIO()
+        generate_phase(phasedef, progdef, file, phasehimplfile)
         print("""\treturn""", file=file)
+
+        if phasehimplfile.getvalue():
+            print(file=file)
+            file.write(phasehimplfile.getvalue())
 
     # Queues not assigned to built-in phases.
     for queuedef in progdef.queues:
         if queuedef.phase:
             continue
         print(file=file)
-        print(f"handle_{queuedef.name.lower()}:", file=file)
-        generate_queue_handler(queuedef, progdef, file)
+        startlabel = "handle_" + queuedef.name.lower()
+        print(startlabel + ":", file=file)
+        queuehimplfile = io.StringIO()
+        generate_queue_handler(queuedef, progdef, startlabel, file, queuehimplfile)
         print(f"\treturn", file=file)
+
+        if queuehimplfile.getvalue():
+            print(file=file)
+            file.write(queuehimplfile.getvalue())
 
     print("""
 \tend""", file=file)
