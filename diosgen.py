@@ -305,7 +305,7 @@ def generate_queue_init(queuedef: QueueDef, file: TextIO):
 def generate_queue_handler(queuedef: QueueDef, progdef: ProgramDef, startlabel: str, file: TextIO, implfile: TextIO):
     has_prios = progdef.phase_has_priorities(queuedef.phase)
 
-    print(f"\t; Queue handler for {queuedef.name}", file=file)
+    print(f"\t; Queue dispatcher for {queuedef.name}", file=file)
 
     qendlabel = f"dios_qend_{queuedef.name}"
     if queuedef.is_large:
@@ -323,9 +323,9 @@ def generate_queue_handler(queuedef: QueueDef, progdef: ProgramDef, startlabel: 
 
     for i in range((len(queuedef.events) + 7) // 8):
         wendlabel = f"dios_w{i}end_{queuedef.name}"
+        print(f"\tbanksel\tdios_q_{queuedef.name} + {i}", file=file)
         if not queuedef.is_tiny:
             print(f"""\tpagesel\t{wendlabel}
-\tbanksel\tdios_q_{queuedef.name} + {i}
 \tmovf\tdios_q_{queuedef.name} + {i}, F
 \tbtfsc\tSTATUS, Z
 \tgoto\t{wendlabel}""", file=file)
@@ -349,7 +349,7 @@ def generate_queue_handler(queuedef: QueueDef, progdef: ProgramDef, startlabel: 
                 print(f"""\tbanksel\tdios_qstate_{queuedef.name} + {i}
 \tbsf\tdios_qstate_{queuedef.name}, 1""", file=implfile)
             if j != endbit - 1:
-                print(f"""\tbanksel\tdios_q_{queuedef.name} + {i}""", file=implfile)
+                print(f"\tbanksel\tdios_q_{queuedef.name} + {i}", file=implfile)
             print(f"""\tpagesel\t{bendlabel}
 \tgoto\t{bendlabel}""", file=implfile)
 
@@ -357,7 +357,8 @@ def generate_queue_handler(queuedef: QueueDef, progdef: ProgramDef, startlabel: 
 
         if not queuedef.is_tiny:
             if not queuedef.is_large and has_prios:
-                print(f"""\tbsf\tdios_qstate_{queuedef.name}, 1""", file=file)
+                print(f"""\tbanksel\tdios_qstate_{queuedef.name}
+\tbsf\tdios_qstate_{queuedef.name}, 1""", file=file)
             print(f"{wendlabel}:", file=file)
 
     if has_prios:
