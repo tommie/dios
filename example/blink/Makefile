@@ -13,7 +13,7 @@ all: blink.hex
 .PHONY: clean
 clean:
 	rm -f *.hex *.lst *.cod
-	rm -f *.o
+	rm -f *.o *.map
 
 blink.hex: blink.main.o
 
