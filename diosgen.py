@@ -261,8 +261,8 @@ dios_q_{queuedef.name}\tres\t(dios_qsz_{queuedef.name} + 7) / 8""", file=file)
 
 def generate_queue_macros(queuedef: QueueDef, file: TextIO):
     print(f"""diospost_{queuedef.name.lower()}\tmacro\tbit
-\tbanksel\tdios_q_{queuedef.name} + ((bit) + 7) / 8
-\tbsf\tdios_q_{queuedef.name} + ((bit) + 7) / 8, (bit) % 8""", file=file)
+\tbanksel\tdios_q_{queuedef.name} + (bit) / 8
+\tbsf\tdios_q_{queuedef.name} + (bit) / 8, (bit) % 8""", file=file)
     if queuedef.is_large:
         # This is interrupt safe: if the event flag is handled before
         # we set state, there is nothing more to do, and setting state
