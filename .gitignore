@@ -5,3 +5,8 @@ __pycache__/
 /example/**/*.lst
 /example/**/*.map
 /example/**/*.o
+/module/**/*.cod
+/module/**/*.hex
+/module/**/*.lst
+/module/**/*.map
+/module/**/*.o
