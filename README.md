@@ -543,13 +543,19 @@ There should be no visible difference to the user.
 - It would be nice to use macros instead of `ifdef`, so all handler code uses local names.
   Then we'd include all modules once, and use well-known names instead.
   Before building the code generator, the `ifdef` approach required less maintenance, so that's where we are.
+- For abstract modules, it would be cool to find a pattern where they automatically hook into phases.
 - Timers would be useful in general, to share the few hardware timers more easily.
   This is similar to event counter expressions, but would be able to disable the hardware when it's not needed.
+  - It doesn't have to have software timers, just define a phase that updates the next expiration.
+  - That's essentialy what a specific `irq` phase is, so what would this add? A compare-and-set?
+  - If it requires iterating through each timer to find the next timeout, perhaps there is no benefit?
+  - It could use a bitset to ignore stopped timers, but that's only useful if there are many such timers.
 - gpsim could be used for automatic testing.
   Remember to disable WDT!
 - Event expressions: building meta-events to say "post X if A and then B or (C and D in any order) are posted".
   Not entirely sure how useful that would be on its own.
   - "post X if A has been posted 10 times" would be useful for timers
   - "post X if A has been posted 10 times and not B" would be useful to debouncers
+  - The benefit would be the ability to pack state tightly, across module boundaries.
 - Continuations: implementing cooperative multitasking by allowing "waiting" on one or more events, like POSIX `select(2)`.
   For PIC-sized code, is there any benefit compared to modular event handlers?
