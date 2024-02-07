@@ -186,8 +186,14 @@ class TestGenerate(unittest.TestCase):
 
     def test_module_standard_phases(self):
         self.assertGenerateValid(diosgen.ProgramDef(), modules={
-            "a.inc": """\tifdef diosh_udata
-\tres 1
+            "a.inc": """\tifdef diosh_defs
+ONE equ 1
+\tendif
+\tifdef diosh_config
+\t__config 0
+\tendif
+\tifdef diosh_udata
+\tres ONE
 \tendif
 \tifdef diosh_udata_shr
 \tres 2

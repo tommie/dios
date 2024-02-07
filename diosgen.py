@@ -451,19 +451,32 @@ def generate_main(progdef: ProgramDef, file: TextIO):
         for path in progdef.includes:
             print(f'\tinclude\t"{path}"', file=file)
 
-    # Data definitions.
-    print("""
-\tudata""", file=file)
+    # Compile-time definitions.
+    print(file=file)
     generate_consts(progdef, file)
     for qid, queuedef in enumerate(progdef.queues):
         print(file=file)
-        generate_queue_udata(queuedef, file)
         generate_queue_consts(queuedef, qid, file)
 
-    # Gathered constants.
     for constdef in progdef.consts:
         print(file=file)
         generate_constdef(constdef, progdef, file)
+
+    if progdef.modules:
+        print(file=file)
+        generate_modules("defs", progdef, file, post=False)
+
+    # Configuration word.
+    if progdef.modules:
+        print(file=file)
+        generate_modules("config", progdef, file, post=False)
+
+    # Data definitions.
+    print("""
+\tudata""", file=file)
+    for qid, queuedef in enumerate(progdef.queues):
+        print(file=file)
+        generate_queue_udata(queuedef, file)
 
     if progdef.modules:
         print(file=file)

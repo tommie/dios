@@ -163,10 +163,12 @@ Using post-handlers is likely not very useful for `init` and `idle`.
 
 ### Additional Code and Data
 
-Similar to the phases, there are hooks available for definition various sections:
+Similar to the phases, there are hooks available for various sections:
 
 | Hook      | Description |
 |-----------|-------------|
+| defs      | Compile-time definitions and macros
+| config    | Configuration word (`__config` directives)
 | udata     | Uninitialized data
 | udata_shr | Uninitialized data in the non-banked space
 | idata     | Initialized data
