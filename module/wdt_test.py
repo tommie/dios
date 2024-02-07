@@ -23,7 +23,7 @@ class TestWDT(unittest.TestCase):
                 shutil.copyfile(moduledef.path, os.path.join(tdir, moduledef.path))
 
             try:
-                subprocess.run(["gpasm", "--mpasm-compatible", "-p16f887", "-c", progdef.srcname], text=True, check=True, cwd=tdir)
+                subprocess.run(["gpasm", "--mpasm-compatible", "-p16f887", "-r", "dec", "-c", progdef.srcname], text=True, check=True, cwd=tdir)
             except:
                 with open(os.path.join(tdir, progdef.srcname), "r") as f:
                     mainsrc = f.read()

@@ -164,7 +164,7 @@ class TestGenerate(unittest.TestCase):
                     print(src, file=f)
 
             try:
-                subprocess.run(["gpasm", "--mpasm-compatible", "-p16f887", "-c", "unittest.asm"], text=True, check=True, cwd=tdir)
+                subprocess.run(["gpasm", "--mpasm-compatible", "-p16f887", "-r", "dec", "-c", "unittest.asm"], text=True, check=True, cwd=tdir)
             except:
                 print("Generated Source:\n" + mainsrc, file=sys.stderr)
                 raise
