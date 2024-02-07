@@ -11,7 +11,7 @@
     const   trisa_init, and     ; The default is 0xFF.
     const   porta_init, or      ; The default is 0.
 
-    irq     irq_t0, INTCON, T0IF
+    irq     irq_timer0, INTCON, T0IF
 
     evqueue IDLE_QUEUE, idle
     event   BLINK_EVENT

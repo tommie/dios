@@ -21,6 +21,7 @@ counter_ev#v(index) equ     event
                     endm
                     endif   ; diosh_udata
 
+
                     ifdef   diosh_defs
                     ;; Invoke this before attempting to decrement the counter.
 counter_init        macro           index

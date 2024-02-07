@@ -10,6 +10,7 @@
     movwf       WDTCON
     endif       ; wdtcon_init
 
+
     ifdef       WDT_RESET_EVENT
     pagesel     wdt_reset_end
     btfss       STATUS, NOT_TO
@@ -18,6 +19,7 @@
 wdt_reset_end:
     endif       ; WDT_RESET_EVENT
     endif       ; wdtcon_init
+
 
     ifdef   diosph_idle
     clrwdt

@@ -4,17 +4,20 @@
     xorwf   PORTA, F
     endif   ; diosh_event_IDLE_QUEUE_TIMER0
 
+
     ifdef   diosh_event_IDLE_QUEUE_TIMER1
     movlw   1 << 1
     banksel PORTA
     xorwf   PORTA, F
     endif   ; diosh_event_IDLE_QUEUE_TIMER1
 
+
     ifdef   diosh_event_IDLE_QUEUE_TIMER2
     movlw   1 << 2
     banksel PORTA
     xorwf   PORTA, F
     endif   ; diosh_event_IDLE_QUEUE_TIMER2
+
 
     ;; If this toggles, your periodicity is too fast for the CPU to
     ;; handle. Either increase the prescaling, or increase the TIMER0_FUZZ
@@ -25,9 +28,11 @@
     xorwf   PORTA, F
     endif   ; diosh_event_IDLE_QUEUE_TIMER0_BAD_FUZZ_EVENT
 
+
     ifdef   diosh_defs
 TIMER0_FUZZ equ     4
     endif   ; diosh_defs
+
 
     ifdef           diosh_udata
     timer0_udata    0, TIMER0
@@ -35,13 +40,16 @@ TIMER0_FUZZ equ     4
     timer0_udata    2, TIMER2
     endif           ; diosh_udata
 
+
     ifdef           diosh_udata_shr
 irqsave_fsr         res 1
     endif           ; diosh_udata_shr
 
+
     ifdef           diosh_config
     __config        _CONFIG1, _HS_OSC & _WDTE_OFF & _PWRTE_OFF & _MCLRE_ON & _CP_OFF & _CPD_OFF & _BOREN_ON & _IESO_OFF & _LVP_OFF & _DEBUG_OFF
     endif           ; diosh_config
+
 
     ifdef           diosh_init
     banksel         PORTA
@@ -69,15 +77,18 @@ irqsave_fsr         res 1
     bsf             INTCON, GIE
     endif           ; diosh_init
 
+
     ifdef           diosh_irq
     movf            FSR, W
     movwf           irqsave_fsr
     endif           ; diosh_irq
 
+
     ifdef           diosph_irq
     movf            irqsave_fsr, W
     movwf           FSR
     endif           ; diosph_irq
+
 
     ifdef           diosh_irq_timer0
     timer0_recheck  0, 90

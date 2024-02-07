@@ -30,6 +30,7 @@
 timer0_exp          res     1
                     endif   ; diosh_udata
 
+
                     ifdef   diosh_defs
                     ;; Invoke this in phase udata to instantiate a timer.
                     ;; The index must be an integer, but is otherwise uninterpreted.
@@ -251,10 +252,12 @@ timer0_addnow       macro
                     endm
                     endif   ; diosh_defs
 
+
                     ifdef   diosh_irq_timer0
                     ifndef  TIMER0_FUZZ
                     error   "TIMER0_FUZZ must be defined"
                     endif
+
 
                     ;; timer0_check calls will re-enable the interrupt if appropriate.
                     ;; A cleared T0IE means timer0_exp is the current time, not in the future.
@@ -262,9 +265,11 @@ timer0_addnow       macro
                     bcf     INTCON, T0IE
                     endif   ; diosh_irq_timer0
 
+
                     ifdef   diosph_irq_timer0
                     timer0_commit_
                     endif   ; diosph_irq_timer0
+
 
                     ifdef   diosh_init
                     banksel timer0_exp
