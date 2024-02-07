@@ -40,6 +40,7 @@ class TestWDT(unittest.TestCase):
 
             if PRESERVE_BUILD:
                 shutil.copyfile(os.path.join(tdir, stem + ".cod"), stem + ".cod")
+                shutil.copyfile(os.path.join(tdir, stem + ".hex"), stem + ".hex")
 
     def test_empty(self):
         with open("wdt_test.asm", "r") as f:
